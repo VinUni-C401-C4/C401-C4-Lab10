@@ -112,5 +112,34 @@ def run_expectations(cleaned_rows: List[Dict[str, Any]]) -> Tuple[List[Expectati
         )
     )
 
+    # E7: policy leave policy không được chứa cửa sổ sai 18 tháng (sau khi đã fix)
+    bad_hr_maternity = [
+        r
+        for r in cleaned_rows
+        if r.get("doc_id") == "hr_leave_policy"
+        and "18 tháng" in (r.get("chunk_text") or "")
+    ]
+    ok7 = len(bad_hr_maternity) == 0
+    results.append(
+        ExpectationResult(
+            "hr_leave_no_stale_18m_window",
+            ok7,
+            "halt",
+            f"violations={len(bad_hr_maternity)}",
+        )
+    )
+
+    # E8: chunk_text quá dài hơn 200 ký tự
+    long_chunk = [r for r in cleaned_rows if len((r.get("chunk_text") or "")) > 200]
+    ok8 = len(long_chunk) == 0
+    results.append(
+        ExpectationResult(
+            "chunk_max_length_200",
+            ok8,
+            "warn",
+            f"long_chunks={len(long_chunk)}",
+        )
+    )
+
     halt = any(not r.passed and r.severity == "halt" for r in results)
     return results, halt
