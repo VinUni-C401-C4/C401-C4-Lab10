@@ -25,9 +25,11 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any, Callable
 
 from dotenv import load_dotenv
 
@@ -71,8 +73,15 @@ def _ensure_dirs(*dirs: Path) -> None:
 
 
 def _safe_run_id(run_id: str) -> str:
-    """Sanitise run_id for use in filenames (replace colons/spaces)."""
-    return run_id.replace(":", "-").replace(" ", "_")
+    r"""
+    Sanitise run_id for use in filenames.
+
+    Replaces all characters that are unsafe on Windows/Linux/macOS filesystems
+    (including ``:``, ``/``, ``\``, ``*``, ``?``, ``<``, ``>``, ``|``, ``"``, space)
+    with underscores, then collapses consecutive underscores.
+    """
+    safe = re.sub(r'[\\/:*?"<>|\s]+', "_", run_id)
+    return safe.strip("_") or "run"
 
 
 class PipelineLogger:
@@ -81,22 +90,39 @@ class PipelineLogger:
 
     Emits key=value lines so the log is both human-readable and
     machine-parseable (grep-friendly for grading scripts).
+
+    Implements the context manager protocol so the underlying file handle
+    is opened once and held open for the full pipeline run, avoiding
+    repeated open()/close() syscalls on every log line.
+
+    Usage::
+        with PipelineLogger(log_path) as log:
+            log("run_id=sprint1")
+            log.section("STAGE 1")
     """
 
     def __init__(self, log_path: Path) -> None:
         self._path = log_path
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        self._append(f"\n{'=' * 60}")
-        self._append(f"log_session_start={datetime.now(timezone.utc).isoformat()}")
+        self._fh = log_path.open("a", encoding="utf-8")
+        self._write(f"\n{'=' * 60}")
+        self._write(f"log_session_start={datetime.now(timezone.utc).isoformat()}")
 
-    def _append(self, line: str) -> None:
-        with self._path.open("a", encoding="utf-8") as fh:
-            fh.write(line + "\n")
+    def _write(self, line: str) -> None:
+        """Write one line to the open file handle and flush immediately."""
+        self._fh.write(line + "\n")
+        self._fh.flush()
+
+    def __enter__(self) -> "PipelineLogger":
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self._fh.close()
 
     def __call__(self, msg: str) -> None:
         """Log and print a single message line."""
         print(msg)
-        self._append(msg)
+        self._write(msg)
 
     def section(self, title: str) -> None:
         """Print a visual section separator."""
@@ -137,6 +163,9 @@ def cmd_run(args: argparse.Namespace) -> int:
 
     log_path = LOG_DIR / f"run_{safe_id}.log"
     log = PipelineLogger(log_path)
+    # NOTE: PipelineLogger holds an open file handle. The with-block ensures
+    # it is closed cleanly even if an unhandled exception occurs downstream.
+    # Callers using _embed_cleaned_csv pass `log` as a Callable[[str], None].
 
     # -------------------------------------------------------------------------
     # Stage 1: Ingest  (Ingestion Owner)
@@ -215,12 +244,12 @@ def cmd_run(args: argparse.Namespace) -> int:
     # -------------------------------------------------------------------------
     log.section("STAGE 5 — MANIFEST & FRESHNESS")
 
-    latest_exported = max(
-        (r.get("exported_at") or "" for r in cleaned),
-        default="",
-    )
+    # Use lexicographic max only on non-empty ISO-8601 values; fall back to
+    # empty string so freshness_check raises WARN (not crash) if missing.
+    exported_timestamps = [r.get("exported_at", "") for r in cleaned if r.get("exported_at", "")]
+    latest_exported = max(exported_timestamps) if exported_timestamps else ""
 
-    manifest: dict = {
+    manifest: dict[str, Any] = {
         "run_id"            : run_id,
         "run_timestamp"     : datetime.now(timezone.utc).isoformat(),
         "raw_path"          : str(raw_path.relative_to(ROOT)),
@@ -261,7 +290,12 @@ def cmd_run(args: argparse.Namespace) -> int:
 # Embed helper (Stage 4)
 # ---------------------------------------------------------------------------
 
-def _embed_cleaned_csv(cleaned_csv: Path, *, run_id: str, log) -> bool:
+def _embed_cleaned_csv(
+    cleaned_csv: Path,
+    *,
+    run_id: str,
+    log: Callable[[str], None],
+) -> bool:
     """
     Upsert cleaned chunks into ChromaDB.
 
@@ -324,7 +358,14 @@ def _embed_cleaned_csv(cleaned_csv: Path, *, run_id: str, log) -> bool:
         for r in rows
     ]
 
-    col.upsert(ids=current_ids, documents=documents, metadatas=metadatas)
+    # Wrap upsert in try/except — unhandled chroma errors (disk full, schema
+    # mismatch, etc.) should surface as a clean False rather than a raw traceback.
+    try:
+        col.upsert(ids=current_ids, documents=documents, metadatas=metadatas)
+    except Exception as exc:
+        log(f"ERROR: embed upsert failed: {exc}")
+        return False
+
     log(f"embed_upsert_count={len(current_ids)}")
     log(f"embed_collection_total={col.count()}")
     return True
