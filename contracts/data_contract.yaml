@@ -1,0 +1,112 @@
+# Data contract — Lab Day 10 (tiếp nối artifact CS + IT Helpdesk)
+# Ingestion Owner: điền đầy đủ owner, SLA freshness, nguồn canonical.
+# Đồng bộ với: docs/data_contract.md
+
+version: "1.0"
+dataset: "kb_chunk_export"
+owner_team: "Ingestion Owner — Lab Day 10"
+contact: "lab-day10-team@vinuni.edu.vn"
+updated_at: "2026-04-15"
+
+schema_cleaned:
+  chunk_id:
+    type: string
+    required: true
+    description: >
+      ID ổn định sau clean: sha256(doc_id | chunk_text | seq)[:16].
+      Idempotent — cùng nội dung luôn cho cùng chunk_id.
+  doc_id:
+    type: string
+    required: true
+    description: "Khóa logic tài liệu nguồn (vd policy_refund_v4). Phải thuộc allowed_doc_ids."
+  chunk_text:
+    type: string
+    required: true
+    constraints:
+      min_length: 8
+    description: "Nội dung chunk sau khi cleaning (stale text đã được fix hoặc quarantine)."
+  effective_date:
+    type: date
+    format: "YYYY-MM-DD"
+    required: true
+    description: "Ngày hiệu lực tài liệu, đã chuẩn hoá sang ISO 8601."
+  exported_at:
+    type: datetime
+    format: "ISO 8601"
+    required: true
+    description: "Timestamp export từ hệ nguồn; dùng để tính freshness SLA."
+
+quality_rules:
+  - id: "no_duplicate_chunk_text"
+    description: "Loại bỏ chunk trùng nội dung; giữ bản đầu."
+    severity: "warn"
+    metric: "quarantine_reason[duplicate_chunk_text]"
+
+  - id: "no_stale_refund_window"
+    description: >
+      Không được để chunk policy_refund_v4 chứa cửa sổ 14 ngày làm việc
+      (lệch so với v4 = 7 ngày). Apply rule fix 14→7 hoặc quarantine.
+    severity: "halt"
+    metric: "expectation[refund_no_stale_14d_window]"
+
+  - id: "no_unknown_doc_id"
+    description: "doc_id phải thuộc allowed_doc_ids bên dưới."
+    severity: "halt"
+    metric: "quarantine_reason[unknown_doc_id]"
+
+  - id: "no_stale_hr_version"
+    description: >
+      HR leave policy có effective_date < hr_leave_min_effective_date bị quarantine.
+      Tránh conflict version 10 ngày (2025) vs 12 ngày (2026).
+    severity: "halt"
+    metric: "quarantine_reason[stale_hr_policy_effective_date]"
+
+freshness:
+  measured_at: "publish"     # ingest | cleaned | publish
+  sla_hours: 24
+  alert_channel: "log:artifacts/logs/"
+  env_override: "FRESHNESS_SLA_HOURS"
+  note: >
+    CSV mẫu có exported_at=2026-04-10 — freshness sẽ FAIL khi chạy sau ngày 11/04.
+    Hành vi đúng; ghi trong runbook.
+
+canonical_sources:
+  - path: "data/docs/policy_refund_v4.txt"
+    doc_id: "policy_refund_v4"
+    version: "v4"
+    effective_date: "2026-02-01"
+    note: "Source of truth cho cửa sổ hoàn tiền: 7 ngày làm việc."
+
+  - path: "data/docs/sla_p1_2026.txt"
+    doc_id: "sla_p1_2026"
+    version: "2026"
+    effective_date: "2026-02-01"
+    note: "SLA phản hồi P1: 15 phút first response, 4 giờ resolution."
+
+  - path: "data/docs/it_helpdesk_faq.txt"
+    doc_id: "it_helpdesk_faq"
+    version: "2026"
+    effective_date: "2026-02-01"
+    note: "Lock tài khoản sau 5 lần sai; đổi mật khẩu đồng bộ 24 giờ."
+
+  - path: "data/docs/hr_leave_policy.txt"
+    doc_id: "hr_leave_policy"
+    version: "2026"
+    effective_date: "2026-02-01"
+    note: "12 ngày phép cho nhân viên < 3 năm kinh nghiệm (bản 2026)."
+
+# Allowlist export — đồng bộ với ALLOWED_DOC_IDS trong transform/cleaning_rules.py.
+# Khi thêm doc mới: cập nhật cả 2 nơi này + canonical_sources bên trên.
+allowed_doc_ids:
+  - policy_refund_v4
+  - sla_p1_2026
+  - it_helpdesk_faq
+  - hr_leave_policy
+
+# Versioning cutoff — đọc từ đây để tránh hard-code trong code (Distinction criterion).
+# cleaning_rules.py nên load file này qua yaml và đọc hr_leave_min_effective_date.
+policy_versioning:
+  hr_leave_min_effective_date: "2026-01-01"
+  hr_leave_stale_marker: "10 ngày phép năm"
+  refund_stale_marker: "14 ngày làm việc"
+  refund_correct_value: "7 ngày làm việc"
