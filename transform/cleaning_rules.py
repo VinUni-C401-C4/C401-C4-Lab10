@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Tuple
 # Khớp export hợp lệ trong lab (mở rộng khi nhóm thêm doc mới — phải đồng bộ contract).
 ALLOWED_DOC_IDS = frozenset(
     {
-        "access_control_sop"
+        "access_control_sop",
         "policy_refund_v4",
         "sla_p1_2026",
         "it_helpdesk_faq",
