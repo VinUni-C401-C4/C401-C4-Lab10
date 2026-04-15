@@ -1,0 +1,22 @@
+{
+  "run_id": "2026-04-15T07-58Z",
+  "run_timestamp": "2026-04-15T07:59:15.573389+00:00",
+  "raw_path": "data\\raw\\policy_export_dirty.csv",
+  "raw_records": 10,
+  "cleaned_records": 6,
+  "quarantine_records": 4,
+  "quarantine_reasons": {
+    "duplicate_chunk_text": 1,
+    "missing_effective_date": 1,
+    "stale_hr_policy_effective_date": 1,
+    "unknown_doc_id": 1
+  },
+  "latest_exported_at": "2026-04-10T08:00:00",
+  "no_refund_fix": false,
+  "skipped_validate": false,
+  "cleaned_csv": "artifacts\\cleaned\\cleaned_2026-04-15T07-58Z.csv",
+  "quarantine_csv": "artifacts\\quarantine\\quarantine_2026-04-15T07-58Z.csv",
+  "chroma_path": "./chroma_db",
+  "chroma_collection": "day10_kb",
+  "log_path": "artifacts\\logs\\run_2026-04-15T07-58Z.log"
+}
