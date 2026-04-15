@@ -1,12 +1,11 @@
 {
   "run_id": "sprint2",
-  "run_timestamp": "2026-04-15T08:45:03.858315+00:00",
+  "run_timestamp": "2026-04-15T08:56:02.926566+00:00",
   "raw_path": "data/raw/policy_export_dirty.csv",
   "raw_records": 13,
   "cleaned_records": 7,
-  "quarantine_records": 6,
+  "quarantine_records": 5,
   "quarantine_reasons": {
-    "duplicate_chunk_text": 1,
     "missing_effective_date": 1,
     "stale_hr_leave_policy_effective_date": 1,
     "unknown_doc_id": 1,

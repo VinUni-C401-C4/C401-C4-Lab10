@@ -142,7 +142,6 @@ def clean_rows(
 
         key = _norm_text(text)
         if key in seen_text:
-            quarantine.append({**raw, "reason": "duplicate_chunk_text"})
             continue
         seen_text.add(key)
 
