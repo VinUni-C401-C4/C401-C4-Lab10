@@ -1,0 +1,21 @@
+{
+  "run_id": "sprint2",
+  "run_timestamp": "2026-04-15T08:38:33.996214+00:00",
+  "raw_path": "data/raw/policy_export_dirty.csv",
+  "raw_records": 13,
+  "cleaned_records": 5,
+  "quarantine_records": 8,
+  "quarantine_reasons": {
+    "unknown_doc_id": 6,
+    "stale_hr_leave_policy_effective_date": 1,
+    "stale_sla_p1_2026_effective_date": 1
+  },
+  "latest_exported_at": "2026-04-10T08:00:00",
+  "no_refund_fix": false,
+  "skipped_validate": false,
+  "cleaned_csv": "artifacts/cleaned/cleaned_sprint2.csv",
+  "quarantine_csv": "artifacts/quarantine/quarantine_sprint2.csv",
+  "chroma_path": "./chroma_db",
+  "chroma_collection": "day10_kb",
+  "log_path": "artifacts/logs/run_sprint2.log"
+}

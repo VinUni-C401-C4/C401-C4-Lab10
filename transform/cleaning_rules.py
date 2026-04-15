@@ -16,12 +16,24 @@ from typing import Any, Dict, List, Tuple
 # Khớp export hợp lệ trong lab (mở rộng khi nhóm thêm doc mới — phải đồng bộ contract).
 ALLOWED_DOC_IDS = frozenset(
     {
+        "access_control_sop"
         "policy_refund_v4",
         "sla_p1_2026",
         "it_helpdesk_faq",
         "hr_leave_policy",
     }
 )
+
+_EFFECTIVE_DATES = {
+    "hr_leave_policy": "2026-01-01",
+    "access_control_policy": "2026-01-01",
+    "access_control_sop": "2026-01-01",
+    "policy_refund_v4": "2026-02-01",
+    "sla_p1_2026": "2026-01-15",
+    "it_helpdesk_faq": "2026-01-20",
+}
+
+_MAX_CHUNK_LEN = 200
 
 _ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _DMY_SLASH = re.compile(r"^(\d{2})/(\d{2})/(\d{4})$")
@@ -66,6 +78,7 @@ def clean_rows(
     rows: List[Dict[str, str]],
     *,
     apply_refund_window_fix: bool = True,
+    apply_policy_window_fix: bool = True,
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
     Trả về (cleaned, quarantine).
@@ -77,6 +90,9 @@ def clean_rows(
     4) Quarantine: chunk_text rỗng hoặc effective_date rỗng sau chuẩn hoá.
     5) Loại trùng nội dung chunk_text (giữ bản đầu).
     6) Fix stale refund: policy_refund_v4 chứa '14 ngày làm việc' → 7 ngày.
+    7) Quarantine: chunk all doc_id có effective_date expired (bản SLA cũ / conflict version).
+    8) Fix stale leave policy: hr_leave_policy chứa 'Nghỉ sinh con: 18 tháng' -> 6 tháng.
+    9) Quarantine: chunk vượt quá đội dài (max = 200 ký tự).
     """
     quarantine: List[Dict[str, Any]] = []
     seen_text: set[str] = set()
@@ -93,6 +109,10 @@ def clean_rows(
             quarantine.append({**raw, "reason": "unknown_doc_id"})
             continue
 
+        if len(text) > _MAX_CHUNK_LEN:
+            quarantine.append({**raw, "reason": "chunk_too_long"})
+            continue
+
         eff_norm, eff_err = _normalize_effective_date(eff_raw)
         if eff_err == "empty_effective_date":
             quarantine.append({**raw, "reason": "missing_effective_date"})
@@ -101,14 +121,19 @@ def clean_rows(
             quarantine.append({**raw, "reason": eff_err, "effective_date_raw": eff_raw})
             continue
 
-        if doc_id == "hr_leave_policy" and eff_norm < "2026-01-01":
-            quarantine.append(
-                {
-                    **raw,
-                    "reason": "stale_hr_policy_effective_date",
-                    "effective_date_normalized": eff_norm,
-                }
-            )
+        skip_outer = False
+        for doc_name, eff_date in _EFFECTIVE_DATES.items():
+            if doc_id == doc_name and eff_norm < eff_date:
+                quarantine.append(
+                    {
+                        **raw,
+                        "reason": f"stale_{doc_name}_effective_date",
+                        "effective_date_normalized": eff_norm,
+                    }
+                )
+                skip_outer = True
+                break
+        if skip_outer:
             continue
 
         if not text:
@@ -129,6 +154,14 @@ def clean_rows(
                     "7 ngày làm việc",
                 )
                 fixed_text += " [cleaned: stale_refund_window]"
+
+        if apply_policy_window_fix and doc_id == "hr_leave_policy":
+            if "Nghỉ sinh con: 18 tháng" in fixed_text:
+                fixed_text = fixed_text.replace(
+                    "Nghỉ sinh con: 18 tháng",
+                    "Nghỉ sinh con: 6 tháng",
+                )
+                fixed_text += " [cleaned: stale_leave_policy]"
 
         seq += 1
         cleaned.append(

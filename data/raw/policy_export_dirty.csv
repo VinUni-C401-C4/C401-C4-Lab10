@@ -9,3 +9,6 @@ chunk_id,doc_id,chunk_text,effective_date,exported_at
 8,hr_leave_policy,"Nhân viên dưới 3 năm kinh nghiệm được 12 ngày phép năm theo chính sách 2026.",2026-02-01,2026-04-10T08:00:00
 9,legacy_catalog_xyz_zzz,"Chunk nội dung đủ dài để vượt ngưỡng expectation độ dài tối thiểu trong cleaned export.",2026-02-01,2026-04-10T08:00:00
 10,it_helpdesk_faq,"FAQ bổ sung: đổi mật khẩu qua portal self-service có thể mất tối đa 24 giờ để đồng bộ toàn hệ thống.",01/02/2026,2026-04-10T08:00:00
+11,hr_leave_policy,"Nghỉ sinh con: 18 tháng theo quy định Luật Lao động.",2026-02-01,2026-04-10T08:00:00
+12,sla_p1_2026,"Ticket P1 có SLA phản hồi ban đầu 40 phút và resolution trong 6 giờ.",2023-02-01,2026-04-10T08:00:00
+13,access_control_sop,"Chunk nội dung đủ dài để vượt ngưỡng expectation độ dài tối thiểu trong cleaned export, nhưng lại có effective_date là 2026-02-01, nhưng lại có exported_at là 2026-04-10T08:00:00, nhưng lại có chunk_id là 3000.",2026-02-01,2026-04-10T08:00:00

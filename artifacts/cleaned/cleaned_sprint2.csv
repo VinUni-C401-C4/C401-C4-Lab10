@@ -1,0 +1,6 @@
+chunk_id,doc_id,chunk_text,effective_date,exported_at
+sla_p1_2026_1_2fe52ef89c679be2,sla_p1_2026,Ticket P1 có SLA phản hồi ban đầu 15 phút và resolution trong 4 giờ.,2026-02-01,2026-04-10T08:00:00
+it_helpdesk_faq_2_b49d2cb54042efb2,it_helpdesk_faq,Tài khoản bị khóa sau 5 lần đăng nhập sai liên tiếp.,2026-02-01,2026-04-10T08:00:00
+hr_leave_policy_3_e52e6e57e6bcba17,hr_leave_policy,Nhân viên dưới 3 năm kinh nghiệm được 12 ngày phép năm theo chính sách 2026.,2026-02-01,2026-04-10T08:00:00
+it_helpdesk_faq_4_ffa0dea992a94e5a,it_helpdesk_faq,FAQ bổ sung: đổi mật khẩu qua portal self-service có thể mất tối đa 24 giờ để đồng bộ toàn hệ thống.,2026-02-01,2026-04-10T08:00:00
+hr_leave_policy_5_1784bb53c5cd04f2,hr_leave_policy,Nghỉ sinh con: 6 tháng theo quy định Luật Lao động. [cleaned: stale_leave_policy],2026-02-01,2026-04-10T08:00:00
