@@ -1,0 +1,23 @@
+{
+  "run_id": "2026-04-15T09-47Z",
+  "run_timestamp": "2026-04-15T09:47:16.796718+00:00",
+  "raw_path": "data/raw/policy_export_dirty.csv",
+  "raw_records": 16,
+  "cleaned_records": 10,
+  "quarantine_records": 5,
+  "quarantine_reasons": {
+    "missing_effective_date": 1,
+    "stale_hr_leave_policy_effective_date": 1,
+    "unknown_doc_id": 1,
+    "stale_sla_p1_2026_effective_date": 1,
+    "chunk_too_long": 1
+  },
+  "latest_exported_at": "invalid-date",
+  "no_refund_fix": false,
+  "skipped_validate": false,
+  "cleaned_csv": "artifacts/cleaned/cleaned_2026-04-15T09-47Z.csv",
+  "quarantine_csv": "artifacts/quarantine/quarantine_2026-04-15T09-47Z.csv",
+  "chroma_path": "./chroma_db",
+  "chroma_collection": "day10_kb",
+  "log_path": "artifacts/logs/run_2026-04-15T09-47Z.log"
+}
