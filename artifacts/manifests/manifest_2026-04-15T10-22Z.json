@@ -1,6 +1,6 @@
 {
-  "run_id": "inject-bad",
-  "run_timestamp": "2026-04-15T10:20:17.660856+00:00",
+  "run_id": "2026-04-15T10-22Z",
+  "run_timestamp": "2026-04-15T10:23:15.950354+00:00",
   "raw_path": "data/raw/policy_export_dirty.csv",
   "raw_records": 16,
   "cleaned_records": 10,
@@ -13,11 +13,11 @@
     "chunk_too_long": 1
   },
   "latest_exported_at": "invalid-date",
-  "no_refund_fix": true,
-  "skipped_validate": true,
-  "cleaned_csv": "artifacts/cleaned/cleaned_inject-bad.csv",
-  "quarantine_csv": "artifacts/quarantine/quarantine_inject-bad.csv",
+  "no_refund_fix": false,
+  "skipped_validate": false,
+  "cleaned_csv": "artifacts/cleaned/cleaned_2026-04-15T10-22Z.csv",
+  "quarantine_csv": "artifacts/quarantine/quarantine_2026-04-15T10-22Z.csv",
   "chroma_path": "./chroma_db",
   "chroma_collection": "day10_kb",
-  "log_path": "artifacts/logs/run_inject-bad.log"
+  "log_path": "artifacts/logs/run_2026-04-15T10-22Z.log"
 }
